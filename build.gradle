@@ -16,12 +16,13 @@ apply plugin: 'kotlin'
 
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
     compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.43'
-    compile group: 'com.sparkjava', name: 'spark-core', version: '2.5.4'
+    compile group: 'com.sparkjava', name: 'spark-core', version: '2.6.0'
     compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.24'
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.0"
     compile 'com.j256.ormlite:ormlite-core:5.0'

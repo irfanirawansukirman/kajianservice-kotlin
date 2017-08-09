@@ -6,7 +6,7 @@ import com.j256.ormlite.table.DatabaseTable
 
 @DatabaseTable(tableName = "tb_user")
 data class UserModel(
-        @DatabaseField(id = true)
+        @DatabaseField(generatedId = true)
         var id_user: Int? = null,
 
         @DatabaseField(columnName = "nama")
@@ -25,8 +25,5 @@ data class UserModel(
         var foto: String = "",
 
         @DatabaseField(columnName = "timestamp")
-        var timestamp: String = "",
-
-        @DatabaseField(columnName = "tipe_user")
-        var tipe_user: String = ""
+        var timestamp: String = ""
 )

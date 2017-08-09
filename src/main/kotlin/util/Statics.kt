@@ -5,3 +5,5 @@ val DB_NAME: String = "/db_kajian"
 val DB_HOST: String = "localhost:3306"
 val DB_USER: String = "root"
 val DB_PASSWORD: String = "lazio12345"
+
+val DATE_DDMMYYY_HHMMSS = "dd/MM/yyyy hh:mm:ss"
