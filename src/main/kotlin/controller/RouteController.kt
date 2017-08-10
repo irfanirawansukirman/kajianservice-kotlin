@@ -5,9 +5,7 @@ import com.j256.ormlite.dao.DaoManager
 import database.DbConnection
 import model.*
 import spark.Spark.*
-import util.baseResponse
-import util.dateFormat
-import util.generateToken
+import util.*
 
 class RouteController {
     fun runApp() {
@@ -22,16 +20,15 @@ class RouteController {
 
         //route for api service
         path("/kajian") {
-            get("/timeline/:page") { requestuest, response ->
-                response.type("application/json")
-
-                val page: Int = requestuest.params("page").toInt()
+            get("/timeline/:page") { request, response ->
+                response.header("Content-Type", "application/json")
+                val page: Int = request.params("page").toInt()
                 val userQuery = userDao.queryBuilder()
                 val masjidQuery = masjidDao.queryBuilder()
                 val kajianQuery = kajianDao.queryBuilder()
                         .join(userQuery)
                         .join(masjidQuery)
-                        .offset((requestuest.params("page").toLong() - 1) * 10)
+                        .offset((request.params("page").toLong() - 1) * 10)
                         .limit(10)
                         .prepare()
 
@@ -57,15 +54,16 @@ class RouteController {
         }
 
         path("/user") {
-            post("/reg") { request, response ->
+            post("/register") { request, response ->
                 response.header("Content-Type", "application/json")
                 val nama = request.queryParams("name")
                 val email = request.queryParams("email")
+                val password = String().setToMd5Format(request.queryParams("password"))
                 val telepon = request.queryParams("telepon")
                 val token = String().generateToken(telepon + "_" + email)
                 val timestamp = String().dateFormat().toString()
 
-                val userModel = UserModel(nama = nama, email = email, telepon = telepon, token = token, foto = "", timestamp = timestamp)
+                val userModel = UserModel(nama = nama, email = email, password = password, telepon = telepon, token = token, foto = "", timestamp = timestamp)
                 val message:String?
 
                 if(userModel == null){
@@ -78,7 +76,37 @@ class RouteController {
                 val baseModelWithoutPage = BaseModelWithoutPage(status_code = response.status(), message = message, data = userModel)
                 response.baseResponse(baseModelWithoutPage)
             }
+
+            post("/login") {request, response ->
+                response.header("Content-Type", "application/json")
+                val email = request.queryParams("email")
+                val password = request.queryParams("password")
+                val token = request.queryParams("token")
+                val isTokenValid: Boolean = getToken(token)
+
+                val message:String?
+
+                if (isTokenValid){
+                    message = "Success"
+
+                    val queryBuilder = userDao.queryBuilder()
+                            .where()
+                            .eq("token", token)
+                            .prepare()
+
+                    val userData = userDao.query(queryBuilder)
+                    val userDataResult = UserModel(id_user = userData.get(0).id_user, nama = userData.get(0).nama, email = userData.get(0).email, password = userData.get(0).password, telepon = userData.get(0).telepon, foto = userData.get(0).foto, timestamp = userData.get(0).timestamp)
+                    val baseModel = BaseModelWithoutPage(status_code = response.status(), message = message, data = userDataResult)
+
+                    response.baseResponse(baseModel)
+                } else {
+                    message = "Failed"
+
+                    val baseModel = BaseModelWithoutPage(status_code = response.status(), message = message, data = isTokenValid)
+
+                    response.baseResponse(baseModel)
+                }
+            }
         }
     }
 }
-

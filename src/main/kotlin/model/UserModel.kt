@@ -15,6 +15,9 @@ data class UserModel(
         @DatabaseField(columnName = "email")
         var email: String = "",
 
+        @DatabaseField(columnName = "password")
+        var password: String = "",
+
         @DatabaseField(columnName = "telepon")
         var telepon: String = "",
 
