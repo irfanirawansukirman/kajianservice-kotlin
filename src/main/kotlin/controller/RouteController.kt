@@ -25,14 +25,14 @@ class RouteController {
                 val page: Int = request.params("page").toInt()
                 val userQuery = userDao.queryBuilder()
                 val masjidQuery = masjidDao.queryBuilder()
-                val kajianQuery = kajianDao.queryBuilder()
-                        .join(userQuery)
-                        .join(masjidQuery)
-                        .offset((request.params("page").toLong() - 1) * 10)
-                        .limit(10)
-                        .prepare()
+                val kajianList = kajianDao.query(
+                        kajianDao.queryBuilder()
+                                .join(userQuery)
+                                .join(masjidQuery)
+                                .offset((request.params("page").toLong() - 1) * 10)
+                                .limit(10)
+                                .prepare())
 
-                val kajianList = kajianDao.query(kajianQuery)
                 var totalPage: Int = Math.round(kajianDao.queryForAll().size.toDouble() / 10).toInt()
                 var countPage: Int = 0
 
@@ -64,9 +64,9 @@ class RouteController {
                 val timestamp = String().dateFormat().toString()
 
                 val userModel = UserModel(nama = nama, email = email, password = password, telepon = telepon, token = token, foto = "", timestamp = timestamp)
-                val message:String?
+                val message: String?
 
-                if(userModel == null){
+                if (userModel == null) {
                     message = "Failed"
                 } else {
                     message = "Success"
@@ -77,25 +77,24 @@ class RouteController {
                 response.baseResponse(baseModelWithoutPage)
             }
 
-            post("/login") {request, response ->
+            post("/login") { request, response ->
                 response.header("Content-Type", "application/json")
                 val email = request.queryParams("email")
                 val password = request.queryParams("password")
                 val token = request.queryParams("token")
                 val isTokenValid: Boolean = getToken(token)
 
-                val message:String?
+                val message: String?
 
-                if (isTokenValid){
+                if (isTokenValid) {
                     message = "Success"
 
-                    val queryBuilder = userDao.queryBuilder()
-                            .where()
-                            .eq("token", token)
-                            .prepare()
-
-                    val userData = userDao.query(queryBuilder)
-                    val userDataResult = UserModel(id_user = userData.get(0).id_user, nama = userData.get(0).nama, email = userData.get(0).email, password = userData.get(0).password, telepon = userData.get(0).telepon, foto = userData.get(0).foto, timestamp = userData.get(0).timestamp)
+                    val userData = userDao.query(
+                            userDao.queryBuilder()
+                                    .where()
+                                    .eq("token", token)
+                                    .prepare())
+                    val userDataResult = UserModel(id_user = userData.get(0).id_user, nama = userData.get(0).nama, email = userData.get(0).email, password = userData.get(0).password, telepon = userData.get(0).telepon, token = userData.get(0).token, foto = userData.get(0).foto, timestamp = userData.get(0).timestamp)
                     val baseModel = BaseModelWithoutPage(status_code = response.status(), message = message, data = userDataResult)
 
                     response.baseResponse(baseModel)
