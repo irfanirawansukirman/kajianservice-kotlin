@@ -56,14 +56,14 @@ class RouteController {
         path("/user") {
             post("/register") { request, response ->
                 response.header("Content-Type", "application/json")
-                val nama = request.queryParams("name")
-                val email = request.queryParams("email")
-                val password = String().setToMd5Format(request.queryParams("password"))
-                val telepon = request.queryParams("telepon")
-                val token = String().generateToken(telepon + "_" + email)
+                val nama = request.body().jsonToMap().get("name")
+                val email = request.body().jsonToMap().get("email")
+                val password = String().setToMd5Format(request.body().jsonToMap().get("password").toString())
+                val telepon = request.body().jsonToMap().get("telepon")
+                val token = String().generateToken("$telepon" + "_" + "$email")
                 val timestamp = String().dateFormat().toString()
 
-                val userModel = UserModel(nama = nama, email = email, password = password, telepon = telepon, token = token, foto = "", timestamp = timestamp)
+                val userModel = UserModel(nama = nama.toString(), email = email.toString(), password = password, telepon = telepon.toString(), token = token, foto = "", timestamp = timestamp)
                 val message: String?
 
                 if (userModel == null) {
@@ -79,10 +79,8 @@ class RouteController {
 
             post("/login") { request, response ->
                 response.header("Content-Type", "application/json")
-                val email = request.queryParams("email")
-                val password = request.queryParams("password")
-                val token = request.queryParams("token")
-                val isTokenValid: Boolean = getToken(token)
+                val token = request.body().jsonToMap().get("token")
+                val isTokenValid: Boolean = getToken(token.toString())
 
                 val message: String?
 

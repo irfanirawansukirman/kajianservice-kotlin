@@ -1,6 +1,9 @@
 package util
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.google.gson.Gson
 import com.j256.ormlite.dao.Dao
 import com.j256.ormlite.dao.DaoManager
 import database.DbConnection
@@ -59,4 +62,15 @@ fun String.dateFormat(): String? {
     val date = Date(timeMilis)
     val formatters = SimpleDateFormat(DATE_DDMMYYY_HHMMSS)
     return formatters.format(date).toString()
+}
+
+
+fun String.jsonToMap(): HashMap<String, Any> {
+    val mapper = ObjectMapper()
+    val typeRef = object : TypeReference<HashMap<String, Any>>() {
+
+    }
+    val o = mapper.readValue<HashMap<String, Any>>(this, typeRef)
+
+    return o
 }
