@@ -3,7 +3,6 @@ package util
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.google.gson.Gson
 import com.j256.ormlite.dao.Dao
 import com.j256.ormlite.dao.DaoManager
 import database.DbConnection
@@ -17,13 +16,12 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.HashMap
 
 fun Response.baseResponse(data: Any): String {
     return jacksonObjectMapper().writeValueAsString(data)
 }
 
-fun getToken(token: String): Boolean {
+fun Boolean.getToken(token: String): Boolean {
     //get connection
     val dbConnection = DbConnection.getDatabaseConnection()
 
@@ -63,7 +61,6 @@ fun String.dateFormat(): String? {
     val formatters = SimpleDateFormat(DATE_DDMMYYY_HHMMSS)
     return formatters.format(date).toString()
 }
-
 
 fun String.jsonToMap(): HashMap<String, Any> {
     val mapper = ObjectMapper()

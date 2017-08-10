@@ -22,6 +22,8 @@ class RouteController {
         path("/kajian") {
             get("/timeline/:page") { request, response ->
                 response.header("Content-Type", "application/json")
+                val token = request.queryParams("token")
+                val isTokenValid: Boolean? = false
                 val page: Int = request.params("page").toInt()
                 val userQuery = userDao.queryBuilder()
                 val masjidQuery = masjidDao.queryBuilder()
@@ -48,7 +50,14 @@ class RouteController {
                     message = "Success"
                 }
 
-                val baseModel = BaseModel(status_code = response.status(), message = message, page = page, total_page = countPage, data = kajianList)
+                val baseModel: BaseModel?
+
+                if (isTokenValid?.getToken(token) == true) {
+                    baseModel = BaseModel(status_code = response.status(), message = message, page = page, total_page = countPage, data = kajianList)
+                } else {
+                    baseModel = BaseModel(status_code = 404, message = message, page = 0, total_page = 0, data = "Data tidak ditemukan")
+                }
+
                 response.baseResponse(baseModel)
             }
         }
@@ -80,7 +89,8 @@ class RouteController {
             post("/login") { request, response ->
                 response.header("Content-Type", "application/json")
                 val token = request.body().jsonToMap().get("token")
-                val isTokenValid: Boolean = getToken(token.toString())
+                val booleanToken: Boolean = false
+                val isTokenValid: Boolean = booleanToken.getToken(token.toString())
 
                 val message: String?
 
