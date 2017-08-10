@@ -14,7 +14,7 @@ class RouteController {
         val dbConnection = DbConnection.getDatabaseConnection()
 
         //get controller
-        val userDao = DaoManager.createDao(dbConnection, UserModel::class.java) as Dao<UserModel, kotlin.String>
+        val userDao = DaoManager.createDao(dbConnection, UserModel::class.java) as Dao<UserModel, String>
         val kajianDao = DaoManager.createDao(dbConnection, KajianModel::class.java) as Dao<KajianModel, Int>
         val masjidDao = DaoManager.createDao(dbConnection, MasjidModel::class.java) as Dao<MasjidModel, Int>
 
@@ -60,6 +60,8 @@ class RouteController {
 
                 response.baseResponse(baseModel)
             }
+
+            get("/timeline/detail/:id_kajian") { request, response -> }
         }
 
         path("/user") {
@@ -112,6 +114,39 @@ class RouteController {
                     val baseModel = BaseModelWithoutPage(status_code = response.status(), message = message, data = isTokenValid)
 
                     response.baseResponse(baseModel)
+                }
+            }
+
+            //nanti ada dua metode kirim pass [sms dan email] => next phase
+            post("/forgot") { request, response -> }
+
+            post("/change_pass/:id_user") { request, response ->
+                response.header("Content-Type", "application/json")
+                val idUser = request.params("id_user")
+                val newPass = String().setToMd5Format(request.body().jsonToMap().get("new_pass").toString())
+
+                val updateBuilder = userDao.updateBuilder()
+                updateBuilder.updateColumnValue("password", newPass)
+                        .where()
+                        .eq("id_user", idUser)
+                updateBuilder.update()
+
+                val userModelUpdate = userDao.query(
+                        userDao.queryBuilder()
+                                .where()
+                                .eq("id_user", idUser)
+                                .prepare())
+
+                val userDataResultUpdate = UserModel(id_user = userModelUpdate.get(0).id_user, nama = userModelUpdate.get(0).nama, email = userModelUpdate.get(0).email, password = userModelUpdate.get(0).password, telepon = userModelUpdate.get(0).telepon, token = userModelUpdate.get(0).token, foto = userModelUpdate.get(0).foto, timestamp = userModelUpdate.get(0).timestamp)
+
+                val message:String?
+
+                if (userDataResultUpdate != null) {
+                    message = "Success"
+                    response.baseResponse(BaseModelWithoutPage(status_code = response.status(), message = message, data = userDataResultUpdate))
+                } else {
+                    message = "Failed"
+                    response.baseResponse(BaseModelWithoutPage(status_code = 404, message = message, data = ""))
                 }
             }
         }
