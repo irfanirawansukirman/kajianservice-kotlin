@@ -123,30 +123,44 @@ class RouteController {
             post("/change_pass/:id_user") { request, response ->
                 response.header("Content-Type", "application/json")
                 val idUser = request.params("id_user")
+                val confirmPass = String().setToMd5Format(request.body().jsonToMap().get("confirm_pass").toString())
                 val newPass = String().setToMd5Format(request.body().jsonToMap().get("new_pass").toString())
-
-                val updateBuilder = userDao.updateBuilder()
-                updateBuilder.updateColumnValue("password", newPass)
-                        .where()
-                        .eq("id_user", idUser)
-                updateBuilder.update()
-
-                val userModelUpdate = userDao.query(
-                        userDao.queryBuilder()
-                                .where()
-                                .eq("id_user", idUser)
-                                .prepare())
-
-                val userDataResultUpdate = UserModel(id_user = userModelUpdate.get(0).id_user, nama = userModelUpdate.get(0).nama, email = userModelUpdate.get(0).email, password = userModelUpdate.get(0).password, telepon = userModelUpdate.get(0).telepon, token = userModelUpdate.get(0).token, foto = userModelUpdate.get(0).foto, timestamp = userModelUpdate.get(0).timestamp)
-
+                val token = request.body().jsonToMap().get("token").toString()
+                var isTokenValid: Boolean? = false
                 val message:String?
 
-                if (userDataResultUpdate != null) {
-                    message = "Success"
-                    response.baseResponse(BaseModelWithoutPage(status_code = response.status(), message = message, data = userDataResultUpdate))
+                isTokenValid = isTokenValid?.getToken(token)
+
+                if (isTokenValid == true){
+                    if (newPass.equals(confirmPass)){
+                        val updateBuilder = userDao.updateBuilder()
+                        updateBuilder.updateColumnValue("password", newPass)
+                                .where()
+                                .eq("id_user", idUser)
+                        updateBuilder.update()
+
+                        val userModelUpdate = userDao.query(
+                                userDao.queryBuilder()
+                                        .where()
+                                        .eq("id_user", idUser)
+                                        .prepare())
+
+                        val userDataResultUpdate = UserModel(id_user = userModelUpdate.get(0).id_user, nama = userModelUpdate.get(0).nama, email = userModelUpdate.get(0).email, password = userModelUpdate.get(0).password, telepon = userModelUpdate.get(0).telepon, token = userModelUpdate.get(0).token, foto = userModelUpdate.get(0).foto, timestamp = userModelUpdate.get(0).timestamp)
+
+                        if (userDataResultUpdate != null) {
+                            message = "Success"
+                            response.baseResponse(BaseModelWithoutPage(status_code = response.status(), message = message, data = userDataResultUpdate))
+                        } else {
+                            message = "Failed"
+                            response.baseResponse(BaseModelWithoutPage(status_code = 500, message = message, data = ""))
+                        }
+                    } else {
+                        message = "Password not match"
+                        response.baseResponse(BaseModelWithoutPage(status_code = 500, message = message, data = ""))
+                    }
                 } else {
-                    message = "Failed"
-                    response.baseResponse(BaseModelWithoutPage(status_code = 404, message = message, data = ""))
+                    message = "Invalid token"
+                    response.baseResponse(BaseModelWithoutPage(status_code = 500, message = message, data = ""))
                 }
             }
         }
