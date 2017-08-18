@@ -21,9 +21,8 @@ class RouteController {
 //        uploadDir.mkdir() // create the upload directory if it doesn't exist
 //
 //        staticFiles.externalLocation("upload")
-
-        //[cara ke 1]
-        staticFiles.externalLocation(System.getProperty("user.dir") + "/src/main/resources/")
+//        or
+//        staticFiles.externalLocation(System.getProperty("user.dir") + "/src/main/resources/image")
 
         //get connection
         val dbConnection = DbConnection.getDatabaseConnection()
