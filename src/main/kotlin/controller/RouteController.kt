@@ -1,14 +1,29 @@
 package controller
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.j256.ormlite.dao.Dao
 import com.j256.ormlite.dao.DaoManager
 import database.DbConnection
 import model.*
 import spark.Spark.*
 import util.*
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+import javax.servlet.MultipartConfigElement
+import javax.servlet.http.Part
+
 
 class RouteController {
     fun runApp() {
+//    [cara ke 2]
+//        val uploadDir = File("upload")
+//        uploadDir.mkdir() // create the upload directory if it doesn't exist
+//
+//        staticFiles.externalLocation("upload")
+
+        //[cara ke 1]
+        staticFiles.externalLocation(System.getProperty("user.dir") + "/src/main/resources/")
 
         //get connection
         val dbConnection = DbConnection.getDatabaseConnection()
@@ -118,7 +133,7 @@ class RouteController {
             }
 
             //nanti ada dua metode kirim pass [sms dan email] => next phase
-            post("/forgot") { request, response -> }
+            post("/forgot") { _, response -> }
 
             post("/change_pass/:id_user") { request, response ->
                 response.header("Content-Type", "application/json")
@@ -162,6 +177,43 @@ class RouteController {
                     message = "Invalid token"
                     response.baseResponse(BaseModelWithoutPage(status_code = 500, message = message, data = ""))
                 }
+            }
+
+            post("/sendkajian", "multipart/form-data") {request, response ->
+                //[cara ke 1]
+                val imageFolder = System.getProperty("user.dir") + "/src/main/resources/" + "image/"
+                val maxFileSize:Long = 100000000
+                val maxRequestSize: Long = 100000000
+                val fileSizeThreshold = 1024
+                var multipartConfigElement:MultipartConfigElement? = MultipartConfigElement(imageFolder, maxFileSize, maxRequestSize, fileSizeThreshold)
+                request.raw().setAttribute("org.eclipse.jetty.multipartConfig", multipartConfigElement)
+
+                val imageName = request.raw().getPart("image").submittedFileName
+                println("Name: " + request.raw().getParameter("title"))
+                println("File: " + imageName)
+
+                var uploadImage:Part? = request.raw().getPart("image")
+                val outPath = Paths.get(imageFolder+imageName)
+                val input = uploadImage!!.inputStream
+                Files.copy(input, outPath, StandardCopyOption.REPLACE_EXISTING)
+                uploadImage.delete()
+
+                //cleanup
+                multipartConfigElement = null
+                uploadImage = null
+
+                jacksonObjectMapper().writeValueAsString("OK")
+
+//                [cara ke 2]
+//                val tempFile = Files.createTempFile(uploadDir.toPath(), "", "")
+//                request.attribute("org.eclipse.jetty.multipartConfig", MultipartConfigElement("/temp"))
+//
+//                request.raw().getPart("image").getInputStream().use({ // getPart needs to use same "name" as input field in form
+//                    input ->
+//                    Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING)
+//                })
+//                println("Request: " + request)
+//                println("tempFile: " + tempFile)
             }
         }
     }
