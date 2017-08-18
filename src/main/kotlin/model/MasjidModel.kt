@@ -5,7 +5,7 @@ import com.j256.ormlite.table.DatabaseTable
 
 @DatabaseTable(tableName = "tb_masjid")
 data class MasjidModel(
-        @DatabaseField(id = true)
+        @DatabaseField(generatedId = true)
         var id_masjid: Int? = null,
 
         @DatabaseField(columnName = "nama")

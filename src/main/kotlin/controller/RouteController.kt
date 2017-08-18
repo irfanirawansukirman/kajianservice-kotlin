@@ -3,6 +3,7 @@ package controller
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.j256.ormlite.dao.Dao
 import com.j256.ormlite.dao.DaoManager
+import com.j256.ormlite.dao.ForeignCollection
 import database.DbConnection
 import model.*
 import spark.Spark.*
@@ -16,13 +17,15 @@ import javax.servlet.http.Part
 
 class RouteController {
     fun runApp() {
-//    [cara ke 2]
+//        [cara ke 2]
 //        val uploadDir = File("upload")
 //        uploadDir.mkdir() // create the upload directory if it doesn't exist
 //
 //        staticFiles.externalLocation("upload")
 //        or
 //        staticFiles.externalLocation(System.getProperty("user.dir") + "/src/main/resources/image")
+
+        staticFiles.location("/image")
 
         //get connection
         val dbConnection = DbConnection.getDatabaseConnection()
@@ -140,13 +143,13 @@ class RouteController {
                 val confirmPass = String().setToMd5Format(request.body().jsonToMap().get("confirm_pass").toString())
                 val newPass = String().setToMd5Format(request.body().jsonToMap().get("new_pass").toString())
                 val token = request.body().jsonToMap().get("token").toString()
+                val message: String?
                 var isTokenValid: Boolean? = false
-                val message:String?
 
                 isTokenValid = isTokenValid?.getToken(token)
 
-                if (isTokenValid == true){
-                    if (newPass.equals(confirmPass)){
+                if (isTokenValid == true) {
+                    if (newPass.equals(confirmPass)) {
                         val updateBuilder = userDao.updateBuilder()
                         updateBuilder.updateColumnValue("password", newPass)
                                 .where()
@@ -178,30 +181,67 @@ class RouteController {
                 }
             }
 
-            post("/sendkajian", "multipart/form-data") {request, response ->
+            post("/sendkajian", "multipart/form-data") { request, response ->
                 //[cara ke 1]
+                response.header("Content-Type", "application/json")
                 val imageFolder = System.getProperty("user.dir") + "/src/main/resources/" + "image/"
-                val maxFileSize:Long = 100000000
+                val maxFileSize: Long = 100000000
                 val maxRequestSize: Long = 100000000
                 val fileSizeThreshold = 1024
-                var multipartConfigElement:MultipartConfigElement? = MultipartConfigElement(imageFolder, maxFileSize, maxRequestSize, fileSizeThreshold)
+                var multipartConfigElement: MultipartConfigElement? = MultipartConfigElement(imageFolder, maxFileSize, maxRequestSize, fileSizeThreshold)
                 request.raw().setAttribute("org.eclipse.jetty.multipartConfig", multipartConfigElement)
 
-                val imageName = request.raw().getPart("image").submittedFileName
-                println("Name: " + request.raw().getParameter("title"))
-                println("File: " + imageName)
+                val imageName = request.raw().getPart("foto").submittedFileName
+                val nama = request.raw().getParameter("nama")
+                val deskripsi = request.raw().getParameter("deskripsi")
+                val pemateri = request.raw().getParameter("pemateri")
+                val tanggal_waktu = request.raw().getParameter("tanggal_waktu")
+                val alamat = request.raw().getParameter("alamat")
+                val id_user = request.raw().getParameter("id_user")
+                val id_masjid = request.raw().getParameter("id_masjid")
 
-                var uploadImage:Part? = request.raw().getPart("image")
-                val outPath = Paths.get(imageFolder+imageName)
+                var uploadImage: Part? = request.raw().getPart("foto")
+                val outPath = Paths.get(imageFolder + imageName)
                 val input = uploadImage!!.inputStream
+
                 Files.copy(input, outPath, StandardCopyOption.REPLACE_EXISTING)
-                uploadImage.delete()
+                uploadImage?.delete()
+
+                val userData = userDao.query(userDao.queryBuilder()
+                        .where()
+                        .eq("id_user", id_user)
+                        .prepare())
+
+                val masjidData = masjidDao.query(masjidDao.queryBuilder()
+                        .where()
+                        .eq("id_masjid", id_masjid)
+                        .prepare())
+
+                val userBody = userData.get(0)
+                val masjidBody = masjidData.get(0)
+
+                val userModel = UserModel(id_user = userBody.id_user, nama = userBody.nama, email = userBody.email, password = userBody.password, telepon = userBody.telepon, token = userBody.token, foto = userBody.foto, timestamp = userBody.timestamp)
+                val masjidModel = MasjidModel(id_masjid = masjidBody.id_masjid, nama = masjidBody.nama, alamat = masjidBody.alamat, longitude = masjidBody.longitude, latitude = masjidBody.latitude, foto = masjidBody.foto)
+                val kajianModel = KajianModel(nama = nama, deskripsi = deskripsi, pemateri = pemateri, tanggal_waktu = tanggal_waktu, alamat = alamat, foto = imageName, user_data = userModel, masjid_data = masjidModel)
+
+                val message: String?
+
+                val baseModelWithoutPage:BaseModelWithoutPage
+
+                if (kajianModel == null) {
+                    message = "Failed"
+                    baseModelWithoutPage = BaseModelWithoutPage(status_code = response.status(), message = message, data = "")
+                } else {
+                    message = "Success"
+                    kajianDao.create(kajianModel)
+                    baseModelWithoutPage = BaseModelWithoutPage(status_code = response.status(), message = message, data = kajianModel)
+                }
 
                 //cleanup
                 multipartConfigElement = null
                 uploadImage = null
 
-                jacksonObjectMapper().writeValueAsString("OK")
+                response.baseResponse(baseModelWithoutPage)
 
 //                [cara ke 2]
 //                val tempFile = Files.createTempFile(uploadDir.toPath(), "", "")

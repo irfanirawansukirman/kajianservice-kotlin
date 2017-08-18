@@ -5,7 +5,7 @@ import com.j256.ormlite.table.DatabaseTable
 
 @DatabaseTable(tableName = "tb_kajian")
 data class KajianModel(
-        @DatabaseField(id = true)
+        @DatabaseField(generatedId = true)
         var id_kajian: Int? = null,
 
         @DatabaseField(columnName = "nama")
